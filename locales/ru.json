@@ -27,5 +27,5 @@
   "Insert depth (0 = after the last message, 1 = before it)": "Глубина вставки (0 — после последнего сообщения, 1 — перед ним)",
   "Time zone for real time (empty = this computer)": "Часовой пояс для реального времени (пусто — как на этом компьютере)",
   "Invalid time zone": "Неверный часовой пояс",
-  "[Current date and time: {weekday}, {date}, {time}.]\n[Current location: {location}.]": "[Сейчас {weekday}, {date}, {time}.]\n[Место действия: {location}.]"
+  "Reference information for you (do not mention or repeat it in your reply unless asked):\nCurrent date and time: {weekday}, {date}, {time}.\nCurrent location: {location}.": "Справочная информация для тебя (не упоминай и не повторяй её в ответе, если об этом не спросят):\nСейчас {weekday}, {date}, {time}.\nМесто действия: {location}."
 }
