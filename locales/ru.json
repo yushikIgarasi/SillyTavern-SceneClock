@@ -18,7 +18,6 @@
   "Language": "Язык",
   "Auto": "Авто",
   "Message template": "Шаблон сообщения",
-  "Placeholders: {weekday} {date} {time} {location}. A line with {location} is skipped when the location is empty.": "Подстановки: {weekday} {date} {time} {location}. Строка с {location} пропускается, если локация пуста.",
   "Reset template": "Сбросить шаблон",
   "Message role": "Роль сообщения",
   "System": "Система",
@@ -27,5 +26,10 @@
   "Insert depth (0 = after the last message, 1 = before it)": "Глубина вставки (0 — после последнего сообщения, 1 — перед ним)",
   "Time zone for real time (empty = this computer)": "Часовой пояс для реального времени (пусто — как на этом компьютере)",
   "Invalid time zone": "Неверный часовой пояс",
-  "Reference information for you (do not mention or repeat it in your reply unless asked):\nCurrent date and time: {weekday}, {date}, {time}.\nCurrent location: {location}.": "Справочная информация для тебя (не упоминай и не повторяй её в ответе, если об этом не спросят):\nСейчас {weekday}, {date}, {time}.\nМесто действия: {location}."
+  "Placeholders: {weekday} {date} {time} {location} {sent_list} {prev_reply} {elapsed}. A line is skipped when its placeholder is empty.": "Подстановки: {weekday} {date} {time} {location} {sent_list} {prev_reply} {elapsed}. Строка пропускается, если для её подстановки нет значения.",
+  "less than a minute": "меньше минуты",
+  "{n} d": "{n} д",
+  "{n} h": "{n} ч",
+  "{n} min": "{n} мин",
+  "Reference information for you (do not mention or repeat it in your reply unless asked):\nCurrent date and time: {weekday}, {date}, {time}.\nCurrent location: {location}.\nMessages from the user since your last reply, in order: {sent_list}.\nYour previous reply was sent: {prev_reply}.\nTime since the last message from the user: {elapsed}.": "Справочная информация для тебя (не упоминай и не повторяй её в ответе, если об этом не спросят):\nСейчас {weekday}, {date}, {time}.\nМесто действия: {location}.\nСообщения пользователя после твоего последнего ответа, по порядку: {sent_list}.\nТвой предыдущий ответ был отправлен: {prev_reply}.\nС момента последнего сообщения пользователя прошло: {elapsed}."
 }
