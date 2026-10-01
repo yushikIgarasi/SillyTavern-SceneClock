@@ -10,7 +10,7 @@ const MINUTE = 60_000;
 const HOUR = 3_600_000;
 
 // English text doubles as the translation key (see locales/*.json).
-const DEFAULT_TEMPLATE = '[Current date and time: {weekday}, {date}, {time}.]\n[Current location: {location}.]';
+const DEFAULT_TEMPLATE = 'Reference information for you (do not mention or repeat it in your reply unless asked):\nCurrent date and time: {weekday}, {date}, {time}.\nCurrent location: {location}.';
 
 const DEFAULTS = Object.freeze({
     enabled: true,
