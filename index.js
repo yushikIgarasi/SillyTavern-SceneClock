@@ -5,12 +5,14 @@
 
 const MODULE = 'scene_clock';     // key in extensionSettings
 const META_KEY = 'scene_clock';   // key in chat metadata (per-chat state)
+const STAMP_KEY = 'scene_clock';  // key in message.extra (time a message was sent/received)
 const MAX_RECENT = 5;             // how many recent locations to remember
 const MINUTE = 60_000;
 const HOUR = 3_600_000;
 
 // English text doubles as the translation key (see locales/*.json).
-const DEFAULT_TEMPLATE = 'Reference information for you (do not mention or repeat it in your reply unless asked):\nCurrent date and time: {weekday}, {date}, {time}.\nCurrent location: {location}.';
+const DEFAULT_TEMPLATE =
+    'Reference information for you (do not mention or repeat it in your reply unless asked):\nCurrent date and time: {weekday}, {date}, {time}.\nCurrent location: {location}.\nMessages from the user since your last reply, in order: {sent_list}.\nYour previous reply was sent: {prev_reply}.\nTime since the last message from the user: {elapsed}.';
 
 const DEFAULTS = Object.freeze({
     enabled: true,
@@ -153,19 +155,95 @@ function effectiveTemplate() {
     return getSettings().template || t(DEFAULT_TEMPLATE);
 }
 
-function buildPromptText() {
+// ── message timestamps ──
+// Every message gets the clock's time when it is sent (yours) or received (the bot's).
+// It is stored in message.extra, never in the message text.
+
+function stampMessage(messageId) {
+    try {
+        if (!getSettings().enabled) return;
+        const message = ctx().chat?.[messageId];
+        if (!message || message.is_system) return;
+        message.extra = message.extra || {};
+        message.extra[STAMP_KEY] = { t: worldNow(getChatState()) };
+    } catch (e) {
+        console.warn('[Scene Clock] could not stamp the message', e);
+    }
+}
+
+const isBotMessage = (message) => !message.is_user && !message.is_system;
+const stampOf = (message) => {
+    const value = message?.extra?.[STAMP_KEY]?.t;
+    return Number.isFinite(value) ? value : null;
+};
+
+// Looks at the real chat: which of your messages came after the bot's last reply,
+// and when was that reply sent.
+function collectTurnInfo(type) {
+    const chat = ctx().chat || [];
+    let end = chat.length;
+    // When regenerating / swiping, the bot's last reply is being replaced, so it doesn't count.
+    if ((type === 'regenerate' || type === 'swipe') && end > 0 && isBotMessage(chat[end - 1])) end--;
+
+    const sent = [];
+    let i = end - 1;
+    for (; i >= 0 && !isBotMessage(chat[i]); i--) {
+        if (chat[i].is_user) {
+            const stamp = stampOf(chat[i]);
+            if (stamp !== null) sent.unshift(stamp);
+        }
+    }
+    const prev = i >= 0 ? stampOf(chat[i]) : null;
+    return { sent, prev };
+}
+
+function shortStamp(ms, nowMs) {
+    const date = new Date(ms);
+    const options = { day: 'numeric', month: 'long', timeZone: 'UTC' };
+    if (date.getUTCFullYear() !== new Date(nowMs).getUTCFullYear()) options.year = 'numeric';
+    return `${new Intl.DateTimeFormat(activeLocale, options).format(date)}, ${date.toISOString().slice(11, 16)}`;
+}
+
+function formatElapsed(ms) {
+    if (ms < 0) return ''; // time was moved backwards: say nothing
+    const total = Math.floor(ms / MINUTE);
+    if (total < 1) return t('less than a minute');
+    const days = Math.floor(total / 1440);
+    const hours = Math.floor((total % 1440) / 60);
+    const minutes = total % 60;
+    const parts = [];
+    if (days) parts.push(t('{n} d').replace('{n}', days));
+    if (hours) parts.push(t('{n} h').replace('{n}', hours));
+    if (minutes) parts.push(t('{n} min').replace('{n}', minutes));
+    return parts.join(' ');
+}
+
+// Placeholders whose line is dropped from the template when they have no value.
+const OPTIONAL_PLACEHOLDERS = ['location', 'sent_list', 'prev_reply', 'elapsed'];
+
+function buildPromptText(type = 'normal') {
     try {
         const state = getChatState();
-        const { weekday, date, time } = describe(worldNow(state));
-        const location = (state.location || '').trim();
-        let lines = effectiveTemplate().split('\n');
-        if (!location) lines = lines.filter((line) => !line.includes('{location}'));
-        return lines.join('\n')
-            .replaceAll('{weekday}', weekday)
-            .replaceAll('{date}', date)
-            .replaceAll('{time}', time)
-            .replaceAll('{location}', location)
-            .trim();
+        const nowMs = worldNow(state);
+        const { weekday, date, time } = describe(nowMs);
+        const { sent, prev } = collectTurnInfo(type);
+
+        const values = {
+            weekday,
+            date,
+            time,
+            location: (state.location || '').trim(),
+            sent_list: sent.map((ms) => shortStamp(ms, nowMs)).join('; '),
+            prev_reply: prev !== null ? shortStamp(prev, nowMs) : '',
+            elapsed: sent.length ? formatElapsed(nowMs - sent[sent.length - 1]) : '',
+        };
+
+        const lines = effectiveTemplate().split('\n').filter(
+            (line) => !OPTIONAL_PLACEHOLDERS.some((key) => values[key] === '' && line.includes(`{${key}}`)),
+        );
+        let text = lines.join('\n');
+        for (const [key, value] of Object.entries(values)) text = text.replaceAll(`{${key}}`, value);
+        return text.trim();
     } catch (e) {
         console.warn('[Scene Clock] could not build the message', e);
         return '';
@@ -180,7 +258,7 @@ globalThis.sceneClockInterceptor = async function (chat, _contextSize, _abort, t
     try {
         const settings = getSettings();
         if (!settings.enabled || type === 'quiet') return;
-        const text = buildPromptText();
+        const text = buildPromptText(type);
         if (!text) return;
 
         const role = settings.role;
@@ -267,7 +345,7 @@ function bodyHtml() {
         <summary>${t('Advanced')}</summary>
         <label class="sc-field">${t('Language')}<select id="sc_lang" class="text_pole"></select></label>
         <label class="sc-field">${t('Message template')}<textarea id="sc_template" class="text_pole" rows="3"></textarea></label>
-        <small class="sc-hint">${t('Placeholders: {weekday} {date} {time} {location}. A line with {location} is skipped when the location is empty.')}</small>
+        <small class="sc-hint">${t('Placeholders: {weekday} {date} {time} {location} {sent_list} {prev_reply} {elapsed}. A line is skipped when its placeholder is empty.')}</small>
         <div class="menu_button" id="sc_template_reset">${t('Reset template')}</div>
         <label class="sc-field">${t('Message role')}
             <select id="sc_role" class="text_pole">
@@ -451,6 +529,8 @@ jQuery(async () => {
         if (c.eventSource && events?.CHAT_CHANGED) {
             c.eventSource.on(events.CHAT_CHANGED, () => refreshUI(true));
         }
+        if (c.eventSource && events?.MESSAGE_SENT) c.eventSource.on(events.MESSAGE_SENT, stampMessage);
+        if (c.eventSource && events?.MESSAGE_RECEIVED) c.eventSource.on(events.MESSAGE_RECEIVED, stampMessage);
         // Keep the preview (and the fields in "your time" mode) ticking while the panel is open.
         setInterval(() => {
             if ($('#sc_body').is(':visible')) refreshUI();
