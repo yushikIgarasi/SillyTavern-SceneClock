@@ -12,7 +12,7 @@ const HOUR = 3_600_000;
 
 // English text doubles as the translation key (see locales/*.json).
 const DEFAULT_TEMPLATE =
-    'Reference information for you (do not mention or repeat it in your reply unless asked):\nCurrent date and time: {weekday}, {date}, {time}.\nCurrent location: {location}.\nMessages from the user since your last reply, in order: {sent_list}.\nYour previous reply was sent: {prev_reply}.\nTime since the last message from the user: {elapsed}.';
+    '<scene_clock>\nThis is reference data about the current moment in the story. Use it naturally to keep track of time. It is context for you, not text for your reply.\ndate: {weekday}, {date}\ntime: {time}\nlocation: {location}\nuser_messages_since_your_last_reply: {sent_list}\nyour_previous_reply_at: {prev_reply}\ntime_since_last_user_message: {elapsed}\n</scene_clock>';
 
 const DEFAULTS = Object.freeze({
     enabled: true,
@@ -344,7 +344,7 @@ function bodyHtml() {
     <details class="sc-advanced">
         <summary>${t('Advanced')}</summary>
         <label class="sc-field">${t('Language')}<select id="sc_lang" class="text_pole"></select></label>
-        <label class="sc-field">${t('Message template')}<textarea id="sc_template" class="text_pole" rows="3"></textarea></label>
+        <label class="sc-field">${t('Message template')}<textarea id="sc_template" class="text_pole" rows="9"></textarea></label>
         <small class="sc-hint">${t('Placeholders: {weekday} {date} {time} {location} {sent_list} {prev_reply} {elapsed}. A line is skipped when its placeholder is empty.')}</small>
         <div class="menu_button" id="sc_template_reset">${t('Reset template')}</div>
         <label class="sc-field">${t('Message role')}
