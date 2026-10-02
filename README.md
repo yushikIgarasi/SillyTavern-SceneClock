@@ -14,6 +14,7 @@ The information goes into the prompt only; nothing is added to the chat messages
 - **Live preview** of exactly what is sent to the bot.
 - Time and location are stored **per chat**.
 - Switching to real time pauses "your time"; switching back resumes from where it stopped.
+- **Echo removal:** if the model repeats the injected lines in its reply, they are cut out of the bot's message automatically (only whole lines matching the template). A button cleans the current chat's history too.
 - English and Russian interface.
 - Optional macros: `{{clock_time}}`, `{{clock_date}}`, `{{clock_weekday}}`, `{{clock_location}}`.
 
@@ -46,6 +47,7 @@ In SillyTavern: **Extensions → Install extension** → paste the URL of this r
 - **Предпросмотр** того, что именно уходит боту.
 - Время и локация хранятся **отдельно для каждого чата**.
 - При переходе на реальное время «своё время» замирает, при возврате продолжается с того же места.
+- **Удаление повторов:** если модель повторила вставленные строки в своём ответе, они автоматически вырезаются из сообщения бота (только строки, целиком совпадающие с шаблоном). Кнопка очищает и историю текущего чата.
 - Интерфейс на русском и английском.
 - Необязательные макросы: `{{clock_time}}`, `{{clock_date}}`, `{{clock_weekday}}`, `{{clock_location}}`.
 
